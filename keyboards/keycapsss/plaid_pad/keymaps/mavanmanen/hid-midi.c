@@ -2,25 +2,34 @@
 
 uint8_t buttonStates[MIDI_BUTTON_COUNT];
 
-void process_midi_button(uint16_t keycode) {
-    uint16_t index = keycode - SAFE_RANGE;
-    uint8_t currentState = buttonStates[index];
-    buttonStates[index] =
-        currentState == MIDI_MIN
-        ? MIDI_MAX
-        : MIDI_MIN;
+bool process_midi_button(uint16_t keycode, keyrecord_t *record) {
+  if(biton32(layer_state) == _MIDI) {
+      if(record->event.pressed) {
+      uint16_t index = keycode - SAFE_RANGE;
+      uint8_t currentState = buttonStates[index];
+      buttonStates[index] =
+          currentState == MIDI_MIN
+          ? MIDI_MAX
+          : MIDI_MIN;
 
-    uint8_t data[32];
-    data[0] = BUTTON;
-    data[1] = index;
-    data[2] = buttonStates[index];
-    raw_hid_send(data, sizeof(data));
+      uint8_t data[32];
+      data[0] = BUTTON;
+      data[1] = index;
+      data[2] = buttonStates[index];
+      raw_hid_send(data, sizeof(data));
+
+      return true;
+    }
+  }
+
+  return false;
 }
 
 uint8_t encoder_left_value = 0;
 uint8_t encoder_right_value = 0;
 
 void process_midi_encoder(uint8_t index, bool ccw) {
+  if(biton32(layer_state) == _MIDI) {
     uint8_t data[32];
     data[0] = ENCODER;
     data[1] = index;
@@ -52,6 +61,7 @@ void process_midi_encoder(uint8_t index, bool ccw) {
     }
 
     raw_hid_send(data, sizeof(data));
+  }
 }
 
 void send_ack(void) {
@@ -62,7 +72,7 @@ void send_ack(void) {
 }
 
 void send_state(void) {
-  uint8_t data[32];
+  uint8_t data[32] = {0, 0, 0, 0, 0, 0, 0, 0,0, 0, 0, 0, 0, 0, 0, 0,0, 0, 0, 0, 0, 0, 0, 0,0, 0, 0, 0, 0, 0, 0, 0};
   data[0] = STATE;
   data[1] = encoder_left_value;
   data[2] = encoder_right_value;
@@ -96,7 +106,7 @@ void raw_hid_receive(uint8_t *data, uint8_t length) {
       break;
 
     case DISCONNECTED:
-      layer_move(_DEFAULT);
+      layer_clear();
       writePinLow(LED_GREEN);
       send_ack();
       break;
