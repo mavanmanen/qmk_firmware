@@ -1,1 +1,5 @@
-MIDI_ENABLE = yes
+EXTRAKEY_ENABLE = no
+MOUSEKEY_ENABLE = no
+RAW_ENABLE = yes
+
+SRC += hid-midi.c

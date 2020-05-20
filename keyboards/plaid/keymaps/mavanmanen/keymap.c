@@ -48,7 +48,16 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   // ),
 };
 
-
 void keyboard_post_init_user(void) {
   writePinHigh(LED_RED);
+}
+
+bool process_record_user(uint16_t keycode, keyrecord_t *record) {
+    if (record->event.pressed) {
+      writePinHigh(LED_GREEN);
+    } else {
+      writePinLow(LED_GREEN);
+    }
+
+    return true;
 }

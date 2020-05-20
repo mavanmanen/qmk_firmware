@@ -1,3 +1,3 @@
 #pragma once
 
-#define MIDI_ADVANCED
+#define TAP_CODE_DELAY 10
