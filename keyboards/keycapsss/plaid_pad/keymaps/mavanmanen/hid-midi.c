@@ -26,29 +26,29 @@ void process_midi_encoder(uint8_t index, bool ccw) {
     data[1] = index;
 
     if(index == 0) {
-    if(ccw) {
-        encoder_left_value = encoder_left_value > MIDI_MIN
-        ? encoder_left_value - 1
-        : MIDI_MAX;
-    } else {
-        encoder_left_value = encoder_left_value < MIDI_MAX
-        ? encoder_left_value + 1
-        : MIDI_MIN;
-    }
+      if(ccw) {
+          encoder_left_value = encoder_left_value > MIDI_MIN
+          ? encoder_left_value - 1
+          : MIDI_MAX;
+      } else {
+          encoder_left_value = encoder_left_value < MIDI_MAX
+          ? encoder_left_value + 1
+          : MIDI_MIN;
+      }
 
-    data[2] = encoder_left_value;
+      data[2] = encoder_left_value;
     } else {
-    if(ccw) {
-        encoder_right_value = encoder_right_value > MIDI_MIN
-        ? encoder_right_value - 1
-        : MIDI_MAX;
-    } else {
-        encoder_right_value = encoder_right_value < MIDI_MAX
-        ? encoder_right_value + 1
-        : MIDI_MIN;
-    }
-
-    data[2] = encoder_right_value;
+      if(ccw) {
+          encoder_right_value = encoder_right_value > MIDI_MIN
+          ? encoder_right_value - 1
+          : MIDI_MAX;
+      } else {
+          encoder_right_value = encoder_right_value < MIDI_MAX
+          ? encoder_right_value + 1
+          : MIDI_MIN;
+      }
+      
+      data[2] = encoder_right_value;
     }
 
     raw_hid_send(data, sizeof(data));
