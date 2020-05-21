@@ -1,3 +1,3 @@
 #pragma once
 
-#define TAP_CODE_DELAY 10
+#define USB_POLLING_INTERVAL_MS 1

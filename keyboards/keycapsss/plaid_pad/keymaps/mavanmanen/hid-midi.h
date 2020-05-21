@@ -8,6 +8,11 @@
 #define MIDI_BUTTON_COUNT 16
 #define _MIDI 10
 
+enum button_type {
+  TOGGLE,
+  MOMENTARY
+};
+
 enum midi_buttons {
   BUTTON_1 = SAFE_RANGE,
   BUTTON_2,
