@@ -21,14 +21,28 @@ uint8_t button_setup[] = {
   [BUTTON_16 - SAFE_RANGE] = MOMENTARY
 };
 
+#define BUFFER_SIZE 32
+uint8_t buffer[BUFFER_SIZE];
+
+void clear_buffer(void) {
+  for (size_t i = 0; i < BUFFER_SIZE; i++)
+  {
+    buffer[i] = 0;
+  }
+}
+
+void send_data(void) {
+  raw_hid_send(buffer, BUFFER_SIZE);
+  clear_buffer();
+}
+
 bool process_midi_button(uint16_t keycode, keyrecord_t *record) {
   if(biton32(layer_state) == _MIDI) {
     uint16_t index = keycode - SAFE_RANGE;
     uint8_t currentState = button_states[index];
 
-    uint8_t data[32];
-    data[0] = BUTTON;
-    data[1] = index;
+    buffer[0] = BUTTON;
+    buffer[1] = index;
 
     if(record->event.pressed) {
       if(button_setup[index] == MOMENTARY) {
@@ -45,13 +59,13 @@ bool process_midi_button(uint16_t keycode, keyrecord_t *record) {
       }
     }
 
-
     if(button_setup[index] == TOGGLE && record->event.pressed == false) {
       return true;
     }
 
-    data[2] = button_states[index];
-    raw_hid_send(data, sizeof(data));
+    buffer[2] = button_states[index];
+
+    send_data();
     return true;
   }
 
@@ -73,56 +87,60 @@ void update_encoder(uint8_t *value, bool ccw) {
 
 void process_midi_encoder(uint8_t index, bool ccw) {
   if(biton32(layer_state) == _MIDI) {
-    uint8_t data[32];
-    data[0] = ENCODER;
-    data[1] = index;
+    buffer[0] = ENCODER;
+    buffer[1] = index;
 
     if(index == 0) {
       update_encoder(&encoder_left_value, ccw);
-      data[2] = encoder_left_value;
+      buffer[2] = encoder_left_value;
     } else {
       update_encoder(&encoder_right_value, ccw);
-      data[2] = encoder_right_value;
+      buffer[2] = encoder_right_value;
     }
 
-    raw_hid_send(data, sizeof(data));
+    send_data();
   }
 }
 
 void send_ack(void) {
-  uint8_t data[32];
-  data[0] = ACK;
-
-  raw_hid_send(data, sizeof(data));
+  buffer[0] = ACK;
+  send_data();
 }
 
 void send_state(void) {
-  uint8_t data[32] = {0, 0, 0, 0, 0, 0, 0, 0,0, 0, 0, 0, 0, 0, 0, 0,0, 0, 0, 0, 0, 0, 0, 0,0, 0, 0, 0, 0, 0, 0, 0};
-  data[0] = STATE;
-  data[1] = encoder_left_value;
-  data[2] = encoder_right_value;
+  buffer[0] = STATE;
+  buffer[1] = encoder_left_value;
+  buffer[2] = encoder_right_value;
 
   for (size_t i = 0; i < MIDI_BUTTON_COUNT; i++) {
-    data[i+3] = button_states[i];
+    buffer[i+3] = button_states[i];
   }
 
-  raw_hid_send(data, sizeof(data));
+  send_data();
 }
 
 void save_state(uint8_t *data) {
   encoder_left_value = data[1];
   encoder_right_value = data[2];
 
-  for (size_t i = 3; i < MIDI_BUTTON_COUNT; i++) {
-    button_states[i-3] = data[i];
+  const int offset = 3;
+  for (size_t i = offset; i < MIDI_BUTTON_COUNT+offset; i++) {
+    button_states[i-offset] = data[i];
   }
 
   send_ack();
 }
 
-void raw_hid_receive(uint8_t *data, uint8_t length) {
-  raw_hid_send(data, sizeof(data));
+void clear_state(void) {
+  encoder_left_value = 0;
+  encoder_right_value = 0;
+  for (size_t i = 0; i < MIDI_BUTTON_COUNT; i++)
+  {
+    button_states[i] = 0;
+  }
+}
 
+void raw_hid_receive(uint8_t *data, uint8_t length) {
   switch(data[0]) {
     case CONNECTED:
       layer_move(_MIDI);
@@ -142,6 +160,11 @@ void raw_hid_receive(uint8_t *data, uint8_t length) {
 
     case SAVE_STATE:
       save_state(data);
+      break;
+
+    case CLEAR_STATE:
+      clear_state();
+      send_ack();
       break;
   }
 }

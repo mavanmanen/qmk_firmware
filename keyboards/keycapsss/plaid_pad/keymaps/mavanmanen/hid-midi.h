@@ -50,7 +50,8 @@ enum raw_hid_message {
   DISCONNECTED,
   GET_STATE,
   SAVE_STATE,
-  STATE
+  STATE,
+  CLEAR_STATE
 };
 
 bool process_midi_button(uint16_t keycode, keyrecord_t *record);
